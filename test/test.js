@@ -6,6 +6,8 @@ var path = require('path');
 var supertest = require('supertest');
 var initialize = require('../web/initialize.js');
 
+
+
 initialize(path.join(__dirname, '/testdata'));
 
 archive.initialize({

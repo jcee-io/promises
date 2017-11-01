@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+const http = require('http');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -12,7 +13,8 @@ var _ = require('underscore');
 exports.paths = {
   siteAssets: path.join(__dirname, '../web/public'),
   archivedSites: path.join(__dirname, '../archives/sites'),
-  list: path.join(__dirname, '../archives/sites.txt')
+  list: path.join(__dirname, '../archives/sites.txt'),
+  index: path.join(__dirname, '../web/public/index.html')
 };
 
 // Used for stubbing paths for tests, do not modify
@@ -26,16 +28,69 @@ exports.initialize = function(pathsObj) {
 // modularize your code. Keep it clean!
 
 exports.readListOfUrls = function(callback) {
+  fs.readFile(exports.paths.list, (err, data) => {
+    if (err) {
+      throw error;
+    }
+    callback(data.toString().split('\n'));
+  });
 };
 
 exports.isUrlInList = function(url, callback) {
+  exports.readListOfUrls((data) => {
+    callback(data.indexOf(url) > -1);
+  });
 };
 
 exports.addUrlToList = function(url, callback) {
+  exports.readListOfUrls((data) => {
+    data = data.join('\n');
+    data += url + '\n';
+    fs.writeFile(exports.paths.list, data, (err) => {
+      if (err) {
+        throw error;
+      } else {
+        console.log('URL added');
+      }
+    });
+    callback(url);
+  });
 };
 
 exports.isUrlArchived = function(url, callback) {
+  fs.readdir(exports.paths.archivedSites, (err, files) => {
+    if (err) {
+      throw error;
+    }
+    callback(files.indexOf(url) > -1);
+  });
 };
 
 exports.downloadUrls = function(urls) {
+  urls.forEach((url) => {
+    http.get('http://' + url, (res) => {
+      let body = '';
+      res.on('data', chunk => {
+        body += chunk.toString();
+      }).on('end', () => {
+        fs.writeFile(exports.paths.archivedSites + '/' + url, body, (err) => {
+          if (err) {
+            throw error;
+          }
+          console.log(url, 'archived');
+        });
+      });
+    });
+  });
 };
+
+
+
+
+
+
+
+
+
+
+
