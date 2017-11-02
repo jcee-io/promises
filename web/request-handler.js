@@ -34,21 +34,30 @@ exports.handleRequest = function (req, res) {
   }
   if (req.method === 'POST') {
     statusCode = 201;
-    // if (archive.isUrlArchived(req.url.slice(1), () => {
-    //   http.get()
-    // })) {
-      
-    
     var body = '';
     req.on('data', chunk => {
-      // console.log(chunk)
       body += chunk.toString();
     }).on('end', () => {
-      archive.addUrlToList(body.slice(4), () => {
-        statusCode = 302;
-        res.writeHead(statusCode, httpHelpers.headers);
-        res.end('');
+      archive.isUrlArchived(body.slice(4), (flag) => {
+        if (flag) {
+          statusCode = 302; 
+          
+          fs.readFile(archive.paths.archivedSites + '/' + body.slice(4), (err, data) => {
+            res.writeHead(statusCode, httpHelpers.headers);
+            res.end(data.toString());
+          });
+          
+        } else {
+          archive.addUrlToList(body.slice(4), () => {
+            fs.readFile('./public/loading.html', (err, data) => {
+              res.writeHead(statusCode, httpHelpers.headers);
+              res.end(data.toString());
+            });
+          });
+        }
       });
     });
+    
+         
   } 
 };

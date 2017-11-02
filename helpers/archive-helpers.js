@@ -51,9 +51,11 @@ exports.addUrlToList = function(url, callback) {
         throw error;
       } else {
         console.log('URL added');
+        exports.downloadUrls([url]);
       }
     });
     callback(url);
+    
   });
 };
 
