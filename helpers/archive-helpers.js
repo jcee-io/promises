@@ -43,19 +43,20 @@ exports.isUrlInList = function(url, callback) {
 };
 
 exports.addUrlToList = function(url, callback) {
-  exports.readListOfUrls((data) => {
-    data = data.join('\n');
-    data += url + '\n';
-    fs.writeFile(exports.paths.list, data, (err) => {
-      if (err) {
-        throw error;
-      } else {
-        console.log('URL added');
-        exports.downloadUrls([url]);
-      }
+  return new Promise ((resolve, reject) => {
+    exports.readListOfUrls((data) => {
+      data = data.join('\n');
+      data += url + '\n';
+      fs.writeFile(exports.paths.list, data, (err) => {
+        if (err) {
+          reject(error);
+        } else {
+          console.log('URL added', data);
+        }
+      });
+      resolve(url); 
+      // exports.downloadUrls([url]);
     });
-    callback(url);
-    
   });
 };
 
@@ -79,7 +80,7 @@ exports.downloadUrls = function(urls) {
           if (err) {
             throw error;
           }
-          console.log(url, 'archived');
+          // console.log(url, 'archived');
         });
       });
     });

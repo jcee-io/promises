@@ -28,5 +28,17 @@ exports.getIndex = function(callback) {
   });
 };
 
+exports.readFile = function(filePath) {
+  return new Promise((resolve, reject) => {
+    
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(data);
+    });
+    
+  });
+};
 
 // As you progress, keep thinking about what helper functions you can put here!

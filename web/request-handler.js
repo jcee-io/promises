@@ -5,8 +5,12 @@ var fs = require('fs');
 var httpHelpers = require('./http-helpers');
 var http = require('http');
 
+var send = function(res, statusCode, data) {
+  res.writeHead(statusCode, httpHelpers.headers);
+  res.end(data);
+};
+
 exports.handleRequest = function (req, res) {
-  // console.log(req.url)
   var statusCode = 200;
   if (req.method === 'GET' && req.url === '/') {
     res.writeHead(statusCode, httpHelpers.headers);
@@ -15,19 +19,15 @@ exports.handleRequest = function (req, res) {
     });
   } else if (req.method === 'GET') {
     fs.readdir(archive.paths.archivedSites, (err, files) => {
-      // console.log(files)
       if (err) {
         throw error;
       }
       if (!files.includes(req.url.slice(1))) {
         statusCode = 404;
-        res.writeHead(statusCode, httpHelpers.headers);
-        res.end(null);
+        send(res, statusCode, null);
       } else {
-        fs.readFile(archive.paths.archivedSites + req.url, (err, data) => {
-          res.writeHead(statusCode, httpHelpers.headers);
-          res.end(data);
-        });
+        httpHelpers.readFile(archive.paths.archivedSites + req.url)
+          .then(data => send(res, statusCode, data));        
       }
     });
 
@@ -38,22 +38,15 @@ exports.handleRequest = function (req, res) {
     req.on('data', chunk => {
       body += chunk.toString();
     }).on('end', () => {
-      archive.isUrlArchived(body.slice(4), (flag) => {
+      archive.isUrlArchived(body.slice(4), flag => {
         if (flag) {
           statusCode = 302; 
-          
-          fs.readFile(archive.paths.archivedSites + '/' + body.slice(4), (err, data) => {
-            res.writeHead(statusCode, httpHelpers.headers);
-            res.end(data.toString());
-          });
-          
+          httpHelpers.readFile(archive.paths.archivedSites + '/' + body.slice(4))
+            .then(data => send(res, statusCode, data.toString()));
         } else {
-          archive.addUrlToList(body.slice(4), () => {
-            fs.readFile('./public/loading.html', (err, data) => {
-              res.writeHead(statusCode, httpHelpers.headers);
-              res.end(data.toString());
-            });
-          });
+          archive.addUrlToList(body.slice(4))
+            .then(() => httpHelpers.readFile('./public/loading.html'))
+            .then(data => send(res, statusCode, data.toString()));
         }
       });
     });
